@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>轮播图</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    [v-cloak]{
+      display: none;
+    }
+    .swipe-box {
+      width: 100%;
+      overflow: hidden;
+    }
+    .swipe-inner {
+      white-space: nowrap;
+      transition: transform .3s;
+    }
+    .swipe-item {
+      display: inline-block;
+      width: 375px;
+      padding: 10px 18px;
+      box-sizing: border-box;
+    }
+    .swipe-item img {
+      display: block;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+<div id="app" v-cloak>
+  <div class="swipe-box"
+       @touchstart="moveStart"
+       @touchmove="move"
+       @touchend="moveEnd">
+    <div class="swipe-inner" :style="innerStyle">
+      <div class="swipe-item" :style="[current === 0 ? previousStyle : {}]">
+        <img :src="banner[banner.length - 1]" alt="" width="100%">
+      </div>
+      <div
+        class="swipe-item"
+        v-for="(item, index) in banner"
+        :key="index"
+        :style="[index === current - 1 ? previousStyle : {}, index === current + 1 ? nextStyle : {}]"
+      >
+        <img :src="item" alt="" width="100%">
+      </div>
+      <div class="swipe-item" :style="[current === banner.length - 1 ? nextStyle : {}]">
+        <img :src="banner[0]" alt="" width="100%">
+      </div>
+    </div>
+  </div>
+  <button @click="previous">上一张</button>
+  <button @click="next">下一张</button>
+  <div>{{ current + 1 }}</div>
+</div>
+</body>
+<script>
+  new Vue({
+    el: '#app',
+    data: {
+      itemWidth: 375,
+      innerStyle: {
+        width: '1500.8px',
+        transform: 'translateX(0)',
+        transitionDuration: '300ms',
+      },
+      previousStyle: {
+        transform: 'translateX(64px) scale(.8)',
+      },
+      nextStyle: {
+        transform: 'translateX(-64px) scale(.8)',
+      },
+      current: 0,
+      banner: [
+        'http://liangcang-material.alicdn.com/prod/upload/9d75c543a52641c09839e5c336b12756.jpg',
+        'http://liangcang-material.alicdn.com/prod/upload/06281ee311744cee944844627433daba.jpg',
+        'http://liangcang-material.alicdn.com/prod/upload/51b82609cfe14f16b157817a96593666.jpg',
+        'http://liangcang-material.alicdn.com/prod/upload/8659b68a2509454db73477437ee5f334.jpg',
+      ],
+    },
+    mounted() {
+      this.innerStyle.width = `${this.banner.length * this.itemWidth}px`;
+      this.innerStyle.transform = `translateX(-${this.itemWidth}px)`;
+    },
+    methods: {
+      previous() {
+        this.current -= 1;
+        if (this.current === -1) {
+          this.innerStyle.transform = `translateX(0px)`;
+          setTimeout(() => {
+            this.innerStyle.transitionDuration = '0ms';
+            this.$nextTick(() => {
+              this.current = this.banner.length - 1;
+              this.innerStyle.transform = `translateX(-${this.banner.length * this.itemWidth}px)`;
+              setTimeout(() => {
+                this.innerStyle.transitionDuration = '300ms';
+              }, 10);
+            });
+          }, 300);
+          return;
+        }
+        this.innerStyle.transform = `translateX(${-1 * (this.current + 1) * this.itemWidth}px)`;
+      },
+      next() {
+        this.current += 1;
+        this.innerStyle.transform = `translateX(-${(this.current + 1) * this.itemWidth}px)`;
+        if (this.current === this.banner.length) {
+          setTimeout(() => {
+            this.innerStyle.transitionDuration = '0ms';
+            this.$nextTick(() => {
+              this.current = 0;
+              this.innerStyle.transform = `translateX(-${this.itemWidth}px)`;
+              setTimeout(() => {
+                this.innerStyle.transitionDuration = '300ms';
+              }, 10);
+            });
+          }, 300);
+        }
+      },
+      moveStart(e) {
+        this.innerStyle.transitionDuration = '0ms';
+        this.moveX = e.touches[0].screenX;
+      },
+      move(e) {
+        const X = e.touches[0].screenX - this.moveX;
+        this.innerStyle.transform = `translateX(${-1 * (this.current + 1) * this.itemWidth + X}px)`;
+        this.previousStyle.transform = `translateX(64px) scale(${X / this.itemWidth * 0.2 + 0.8})`;
+        this.nextStyle.transform = `translateX(-64px) scale(${0.8 - X / this.itemWidth * 0.2})`;
+      },
+      moveEnd(e) {
+        this.innerStyle.transitionDuration = '300ms';
+        this.nextStyle.transform = `translateX(-64px) scale(0.8)`;
+        this.previousStyle.transform = `translateX(64px) scale(0.8)`;
+        const X = e.changedTouches[0].screenX - this.moveX;
+        if (X > 100) {
+          // 上一张
+          this.previous();
+        } else if (X < -100) {
+          // 下一张
+          this.next();
+        } else {
+          this.innerStyle.transform = `translateX(${-1 * (this.current + 1) * this.itemWidth}px)`;
+        }
+      },
+    },
+  });
+</script>
+</html>
